@@ -15,6 +15,8 @@ require "Paddle"
 require "Ball"  
 
 function love.load()
+    love.window.setTitle("Pong")
+
     love.graphics.setDefaultFilter("nearest", "nearest")
 
     math.randomseed(os.time())
@@ -34,6 +36,9 @@ function love.load()
             upscale = "normal"
         }
     )
+
+    -- Settings
+    showFPS = false
 
     p1Score = 0
     p2Score = 0
@@ -57,6 +62,12 @@ function love.keypressed(key)
 
             ball:reset()
             -- TODO: Reset paddles as well
+        end
+    elseif key == 'k' then
+        if showFPS then
+            showFPS = false
+        else
+            showFPS = true
         end
     end
 end
@@ -122,5 +133,23 @@ function love.draw()
 
     ball:render()
 
+    if showFPS then
+        displayFPS()
+    end
+
     push.finish()
+end
+
+function displayFPS()
+    love.graphics.setFont(smallFont)
+    love.graphics.setColor(0, 1, 0) -- Accepts RGB/A
+    
+    love.graphics.print(
+        -- .. is concatenation operator
+        "FPS: " .. tostring(love.timer.getFPS()),
+        10,
+        10
+    )
+    
+    love.graphics.setColor(1, 1, 1)
 end

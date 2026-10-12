@@ -4,11 +4,13 @@ require "Collections"
 Ball = Class{} -- Class({}) in reality
 
 function Ball:init()
-    self.colour = {1, 1, 1, 1}
+    self.initial_spd = 100
+
     self:reset()
 end
 
 function Ball:collides(paddles)
+    -- TODO: Only check the relevant paddle based on which side the ball is
     -- Checks for collisions with the paddles and the top & bottom walls
 
     for _, paddle in ipairs(paddles) do
@@ -44,8 +46,8 @@ function Ball:bounce(side)
         -- Bounce off left & right paddles
         play_sound("pum")
 
-        -- Reverts the speed of the ball and increases it by 3%
-        self.dx = -self.dx * 1.03
+        -- Reverts the speed of the ball and increases it by 5%
+        self.dx = -self.dx * 1.05
 
         if side == "left" then
             self.x = player1.x + 5
@@ -62,17 +64,20 @@ function Ball:bounce(side)
 end
 
 function Ball:reset()
+    -- Ball's Position
     self.x = VIRTUAL_WIDTH / 2 - 2
     self.y = VIRTUAL_HEIGHT / 2 - 2
 
+    -- Ball's Dimensions
     self.width = 4
     self.height = 4
 
     -- Ball's Speed
-    self.dx = math.random(2) == 1 and 100 or -100
+    -- TODO: Make a single spd stat to control both dx & dy
+    self.dx = self.initial_spd -- Inverted in main.love.update when needed
     self.dy = math.random(-50, 50) * 1.5
 
-    -- TODO: Reset colour as well
+    self.colour = {1, 1, 1, 1}
 end
 
 function Ball:update(dt)
@@ -81,6 +86,9 @@ function Ball:update(dt)
 end
 
 function Ball:render()
+    -- Update the ball's colour based on its speed horizontal speed
+    self:update_colour()
+
     love.graphics.setColor(
         self.colour[1],
         self.colour[2],
@@ -97,4 +105,13 @@ function Ball:render()
     )
 
     love.graphics.setColor(1, 1, 1, 1)
+end
+
+function Ball:update_colour()
+    local factor = 102 -- 255 / 2.5
+    local spd_diff = math.abs(math.abs(self.dx) - self.initial_spd)
+
+    -- 255/255 - speed increase since start / (255/2.5)
+    self.colour[2] = 1 - (spd_diff / factor)
+    self.colour[3] = 1 - (spd_diff / factor)
 end

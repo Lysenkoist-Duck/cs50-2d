@@ -5,7 +5,7 @@ VIRTUAL_WIDTH = 432
 VIRTUAL_HEIGHT = 243
 
 -- How many pixels the paddles move per second
-PADDLE_SPEED = 150 -- TODO: Acceleration
+PADDLE_SPEED = 150 -- TODO: Acceleration, start at ~100 and accelerate up to ~300
 
 push = require "push"
 
@@ -95,7 +95,7 @@ function love.keypressed(key)
             gameState = "serve"
         elseif gameState == "serve" then
             gameState = "play"
-        elseif gameState == "end" then
+        elseif gameState == "end" then -- TODO: Then start instead, so one can change players/mode
             gameState = "serve"
 
             ball:reset()
@@ -129,23 +129,21 @@ end
 
 function love.update(dt)
     if gameState == "serve" then
-        ball.dy = math.random(-50, 50)
-        -- TODO: Do it more elegantly
-        if server == 1 then
-            ball.dx = math.random(140, 200)
-        else
-            ball.dx = -math.random(140, 200)
+        ball:reset()
+        player1:reset()
+        player2:reset()
+
+        if server == 2 then
+            ball.dx = -ball.dx -- dx is defined as positive on ball:reset()
         end
     elseif gameState == "play" then
         -- Checks whether the ball is colliding to either paddle
         ball:collides{player1, player2}
 
-        -- Bounce off top & bottom walls
+        -- Bounce the ball off top & bottom walls, respectivelly
         if ball.y <= 0 then
-            -- Bounce off the top
             ball:bounce("up")
         elseif ball.y >= VIRTUAL_HEIGHT - 4 then
-            -- Bounce off the bottom
             ball:bounce("down")
         end
 
@@ -154,12 +152,11 @@ function love.update(dt)
             server = 1
             p2Score = p2Score + 1 -- TODO: Make scoring more interesting
             if p2Score >= 5 then
-                -- TODO: Play party song
+                -- TODO: Play party/victory song
                 winner = 2
                 gameState = "end"
             else
                 play_sound("plim")
-                ball:reset() -- TODO: Reset paddles as well
                 gameState = "serve"
             end
 
@@ -262,6 +259,7 @@ function love.draw()
 
     love.graphics.setFont(scoreFont)
     -- TODO: Change the colours of the score and paddles
+    -- TODO: Let players pick colours at the start stage
     love.graphics.print(
         tostring(p1Score),
         VIRTUAL_WIDTH / 2 - 80,
@@ -299,5 +297,3 @@ function displayFPS()
     
     love.graphics.setColor(1, 1, 1)
 end
-
-

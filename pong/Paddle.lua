@@ -1,6 +1,9 @@
 Paddle = Class{}
 
 function Paddle:init(x, y, width, height, side)
+    self.init_x = x
+    self.init_y = y
+
     self.x = x
     self.y = y
     self.width = width
@@ -8,6 +11,11 @@ function Paddle:init(x, y, width, height, side)
     self.dy = 0
 
     self.side = side
+end
+
+function Paddle:reset()
+    self.x = self.init_x
+    self.y = self.init_y
 end
 
 function Paddle:update(dt)

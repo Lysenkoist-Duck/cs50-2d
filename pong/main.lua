@@ -14,14 +14,17 @@ Class = require "class"
 require "Paddle"
 require "Ball" 
 require "Sound"
+require "Debug"
 
 function love.load()
     love.window.setTitle("Pong")
 
     love.graphics.setDefaultFilter("nearest", "nearest")
 
+    -- Adding an epoch-based seed
     math.randomseed(os.time())
 
+    -- Defining fonts
     smallFont = love.graphics.newFont("font.ttf", 8)
     largeFont = love.graphics.newFont("font.ttf", 16)
     scoreFont = love.graphics.newFont("font.ttf", 32)
@@ -63,16 +66,11 @@ function love.load()
 
     -- Settings
     showFPS = false
-
-    -- Scores
-    p1Score = 0
-    p2Score = 0
     
     -- Server
     server = math.random(1, 2)
 
     -- Paddles
-    -- TODO: Make player objects handle score
     player1 = Paddle(10, 30, 5, 20, "left")
     player2 = Paddle(VIRTUAL_WIDTH - 15, VIRTUAL_HEIGHT - 30, 5, 20, "right")
 
@@ -96,13 +94,9 @@ function love.keypressed(key)
         elseif gameState == "serve" then
             gameState = "play"
         elseif gameState == "end" then -- TODO: Then start instead, so one can change players/mode
-            gameState = "serve"
+            gameState = "start"
 
             ball:reset()
-
-            -- TODO: Count up sets too
-            p1Score = 0
-            p2Score = 0
 
             if winner == 1 then
                 server = 2
@@ -137,7 +131,7 @@ function love.update(dt)
             ball.dx = -ball.dx -- dx is defined as positive on ball:reset()
         end
     elseif gameState == "play" then
-        -- Checks whether the ball is colliding to either paddle
+        -- Checks whether the ball is colliding with either paddle
         ball:collides{player1, player2}
 
         -- Bounce the ball off top & bottom walls, respectivelly
@@ -148,11 +142,11 @@ function love.update(dt)
         end
 
         -- Scoring
+        -- TODO: Play party/victory song when someone wins
         if ball.x < 0 then
             server = 1
-            p2Score = p2Score + 1 -- TODO: Make scoring more interesting
-            if p2Score >= 5 then
-                -- TODO: Play party/victory song
+            player2.score = player2.score + 1
+            if player2.score >= 5 then
                 winner = 2
                 gameState = "end"
             else
@@ -162,8 +156,8 @@ function love.update(dt)
 
         elseif ball.x > VIRTUAL_WIDTH then
             server = 2
-            p1Score = p1Score + 1
-            if p1Score >= 5 then
+            player1.score = player1.score + 1
+            if player1.score >= 5 then
                 winner = 1
                 gameState = "end"
             else
@@ -258,15 +252,15 @@ function love.draw()
     end
 
     love.graphics.setFont(scoreFont)
-    -- TODO: Change the colours of the score and paddles
+    -- TODO: Change the colours of the score and paddles, but first decide which colours
     -- TODO: Let players pick colours at the start stage
     love.graphics.print(
-        tostring(p1Score),
+        tostring(player1.score),
         VIRTUAL_WIDTH / 2 - 80,
         VIRTUAL_HEIGHT / 2 - 120
     )
     love.graphics.print(
-        tostring(p2Score),
+        tostring(player2.score),
         VIRTUAL_WIDTH / 2 + 60,
         VIRTUAL_HEIGHT / 2 - 120
     )
@@ -274,7 +268,6 @@ function love.draw()
     player1:render()
     player2:render()
 
-    -- TODO: Update the ball's colour as it gets faster each hit
     ball:render()
 
     if showFPS then
@@ -282,18 +275,4 @@ function love.draw()
     end
 
     push.finish()
-end
-
-function displayFPS()
-    love.graphics.setFont(smallFont)
-    love.graphics.setColor(0, 1, 0) -- Accepts RGB/A
-    
-    love.graphics.print(
-        -- .. is concatenation operator
-        "FPS: " .. tostring(love.timer.getFPS()),
-        10,
-        10
-    )
-    
-    love.graphics.setColor(1, 1, 1)
 end

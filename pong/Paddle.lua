@@ -11,11 +11,20 @@ function Paddle:init(x, y, width, height, side)
     self.dy = 0
 
     self.side = side
+
+    -- TODO: Make scoring more interesting
+    -- TODO: Count up sets too
+    self.score = 0
 end
 
-function Paddle:reset()
+function Paddle:reset(score)
     self.x = self.init_x
     self.y = self.init_y
+
+    if score then
+        self.score = score
+    else
+        self.score = 0
 end
 
 function Paddle:update(dt)

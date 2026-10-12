@@ -72,6 +72,7 @@ function love.load()
     server = math.random(1, 2)
 
     -- Paddles
+    -- TODO: Make player objects handle score
     player1 = Paddle(10, 30, 5, 20, "left")
     player2 = Paddle(VIRTUAL_WIDTH - 15, VIRTUAL_HEIGHT - 30, 5, 20, "right")
 
@@ -136,40 +137,16 @@ function love.update(dt)
             ball.dx = -math.random(140, 200)
         end
     elseif gameState == "play" then
-        if ball:collides(player1) then
-            -- TODO: Move it all into ball:collides
-            play_sound("pum")
-            
-            ball.dx = -ball.dx * 1.03 -- Reverts the speed of the ball and increases it by 3%
-            ball.x = player1.x + 5 -- TODO: Make repositioning pixel perfect
+        -- Checks whether the ball is colliding to either paddle
+        ball:collides{player1, player2}
 
-            if ball.dy < 0 then
-                ball.dy = -math.random(10, 150)
-            else
-                ball.dy = math.random(10, 150)
-            end
-
-        elseif ball:collides(player2) then
-            play_sound("pum")
-
-            ball.dx = -ball.dx * 1.03
-            ball.x = player2.x - 4 -- TODO: Make repositioning pixel perfect
-
-            if ball.dy < 0 then
-                ball.dy = -math.random(10, 150)
-            else
-                ball.dy = math.random(10, 150)
-            end
-        end
-
+        -- Bounce off top & bottom walls
         if ball.y <= 0 then
-            play_sound("tum")
-            ball.y = 0
-            ball.dy = -ball.dy
+            -- Bounce off the top
+            ball:bounce("up")
         elseif ball.y >= VIRTUAL_HEIGHT - 4 then
-            play_sound("tum")
-            ball.y = VIRTUAL_HEIGHT - 4
-            ball.dy = -ball.dy
+            -- Bounce off the bottom
+            ball:bounce("down")
         end
 
         -- Scoring

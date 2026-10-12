@@ -1,3 +1,6 @@
+require "Sound"
+require "Collections"
+
 Ball = Class{} -- Class({}) in reality
 
 function Ball:init()
@@ -5,19 +8,57 @@ function Ball:init()
     self:reset()
 end
 
-function Ball:collides(paddle)
-    -- Checks for gaps on the x-axis
-    if self.x >= paddle.x + paddle.width or paddle.x >= self.x + self.width then
-        return
-    end
+function Ball:collides(paddles)
+    -- Checks for collisions with the paddles and the top & bottom walls
 
-    -- Checks for gaps on the y-axis
-    if self.y >= paddle.y + paddle.height or paddle.y >= self.y + self.height then
-        return
+    for _, paddle in ipairs(paddles) do
+        -- Checks for gaps on the x-axis
+        local x_gap = self.x >= paddle.x + paddle.width or paddle.x >= self.x + self.width
+        -- Checks for gaps on the y-axis
+        local y_gap = self.y >= paddle.y + paddle.height or paddle.y >= self.y + self.height
+    
+        -- if neither is true, they're colliding
+        if not x_gap and not y_gap then
+            self:bounce(paddle.side)
+            break
+        end
     end
+end
 
-    -- if neither is true, they're colliding
-    return true
+function Ball:bounce(side)
+    local vertical = Set{"up", "down"}
+    local horizontal = Set{"left", "right"}
+
+    if vertical[side] then
+        -- Bounce off top & bottom walls
+        play_sound("tum")
+
+        if side == "up" then
+            self.y = 0
+            self.dy = -self.dy
+        elseif side == "down" then
+            self.y = VIRTUAL_HEIGHT - 4
+            self.dy = -self.dy
+        end
+    elseif horizontal[side] then
+        -- Bounce off left & right paddles
+        play_sound("pum")
+
+        -- Reverts the speed of the ball and increases it by 3%
+        self.dx = -self.dx * 1.03
+
+        if side == "left" then
+            self.x = player1.x + 5
+        elseif side == "right" then
+            self.x = player2.x - 4
+        end
+
+        if self.dy < 0 then
+            self.dy = -math.random(10, 150)
+        else
+            self.dy = math.random(10, 150)
+        end
+    end
 end
 
 function Ball:reset()

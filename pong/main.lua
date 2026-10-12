@@ -5,14 +5,15 @@ VIRTUAL_WIDTH = 432
 VIRTUAL_HEIGHT = 243
 
 -- How many pixels the paddles move per second
-PADDLE_SPEED = 200
+PADDLE_SPEED = 150 -- TODO: Acceleration
 
 push = require "push"
 
 Class = require "class"
 
 require "Paddle"
-require "Ball"  
+require "Ball" 
+require "Sound"
 
 function love.load()
     love.window.setTitle("Pong")
@@ -48,7 +49,7 @@ function love.load()
     }
 
     love.window.setMode(WINDOW_WIDTH, WINDOW_HEIGHT, {
-        resizable = false,
+        resizable = true,
         vsync = true, -- Avoids screen tearing
         fullscreen = false
     })
@@ -68,11 +69,11 @@ function love.load()
     p2Score = 0
     
     -- Server
-    server = 1
+    server = math.random(1, 2)
 
     -- Paddles
-    player1 = Paddle(10, 30, 5, 20)
-    player2 = Paddle(VIRTUAL_WIDTH - 15, VIRTUAL_HEIGHT - 30, 5, 20)
+    player1 = Paddle(10, 30, 5, 20, "left")
+    player2 = Paddle(VIRTUAL_WIDTH - 15, VIRTUAL_HEIGHT - 30, 5, 20, "right")
 
     -- Ball
     ball = Ball(VIRTUAL_WIDTH / 2 - 2, VIRTUAL_HEIGHT / 2 - 2, 4, 4)
@@ -80,10 +81,15 @@ function love.load()
     gameState = "start"
 end
 
+function love.resize(w, h)
+    push.resize(w, h)
+end
+
 function love.keypressed(key)
     if key == 'escape' then
         love.event.quit()
     elseif key == 'enter' or key == 'return' then
+        -- TODO: 1 for single player, 2 for dual player
         if gameState == "start" then
             gameState = "serve"
         elseif gameState == "serve" then
@@ -115,6 +121,9 @@ function love.keypressed(key)
     -- TODO: Make starting over a function that is called after win or [R]
 
     -- TODO: Make it pause with P
+
+    -- TODO: N for next song, B for previous song, M for muting
+    -- TODO: Display what song is being played in some corner of the screen
 end
 
 function love.update(dt)
@@ -127,9 +136,8 @@ function love.update(dt)
             ball.dx = -math.random(140, 200)
         end
     elseif gameState == "play" then
-        -- TODO: Decide which player to check based on which side the ball is
         if ball:collides(player1) then
-            -- TODO: Move it into ball:collides
+            -- TODO: Move it all into ball:collides
             play_sound("pum")
             
             ball.dx = -ball.dx * 1.03 -- Reverts the speed of the ball and increases it by 3%
@@ -169,12 +177,13 @@ function love.update(dt)
             server = 1
             p2Score = p2Score + 1 -- TODO: Make scoring more interesting
             if p2Score >= 5 then
+                -- TODO: Play party song
                 winner = 2
                 gameState = "end"
             else
                 play_sound("plim")
                 ball:reset() -- TODO: Reset paddles as well
-                gameState = "serve" -- TODO: Add a different gamestate for between sets
+                gameState = "serve"
             end
 
         elseif ball.x > VIRTUAL_WIDTH then
@@ -314,13 +323,4 @@ function displayFPS()
     love.graphics.setColor(1, 1, 1)
 end
 
--- TODO: Make sure it's never the same that just played
-function play_sound(sound)
-    if sound == "pum" then
-        sounds["pum"][math.random(1, 4)]:play()
-    elseif sound == "tum" then
-        sounds["tum"][math.random(1, 4)]:play()
-    elseif sound == "plim" then
-        sounds["plim"][math.random(1, 4)]:play()
-    end
-end
+

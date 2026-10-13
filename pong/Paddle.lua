@@ -24,7 +24,11 @@ function Paddle:init(x, y, width, height, side, ai)
         self.ai = 1
     end
 
+    -- TODO: Optimize, maybe if I defined these right when picking an AI player
+    -- Moment of the last move
     self.last_mv = 0
+    -- Margin of error to make it easier
+    self.margin = 0
 end
 
 function Paddle:reset(score)
@@ -77,26 +81,24 @@ function Paddle:react(ball, spd, now)
         -- Pong Jr.
         [2] = {
             ["reaction"] = 0.5,
-            ["margin"] = math.random(6, 10)
+            ["margin"] = {5, 10}
         },
         -- Mr. Pong
         [3] = {
             ["reaction"] = 0.25,
-            ["margin"] = math.random(4, 7)
+            ["margin"] = {3, 7}
         },
         -- El Pongo!
         [4] = {
             ["reaction"] = 0.125,
-            ["margin"] = math.random(2, 4)
+            ["margin"] = {1, 4}
         },
     }
-
+    
     -- Delay before the AI reacts again
     local reaction_time = ai_values[self.ai]["reaction"]
-    -- Margin of error to make it easier
-    local margin = ai_values[self.ai]["margin"]
 
-    if target_distance <= margin then
+    if target_distance <= self.margin then
         self.dy = 0
     elseif ball_incoming and wait(self.last_mv, reaction_time) then
         self.last_mv = now
@@ -107,5 +109,8 @@ function Paddle:react(ball, spd, now)
         elseif self.y < target then
             self.dy = spd
         end
+
+        -- TODO: Optimize
+        self.margin = math.random(ai_values[self.ai]["margin"][1]), math.random(ai_values[self.ai]["margin"][2])
     end
 end

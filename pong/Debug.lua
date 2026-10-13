@@ -1,6 +1,6 @@
-function displayFPS()
+function display_fps()
     love.graphics.setFont(smallFont)
-    love.graphics.setColor(0, 1, 0) -- Accepts RGB/A
+    love.graphics.setColor(0, 1, 0) -- Accepts RGB(A)
     
     love.graphics.print(
         -- .. is concatenation operator

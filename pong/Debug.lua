@@ -1,5 +1,5 @@
 function display_fps()
-    love.graphics.setFont(smallFont)
+    love.graphics.setFont(small_font)
     love.graphics.setColor(0, 1, 0) -- Accepts RGB(A)
     
     love.graphics.print(

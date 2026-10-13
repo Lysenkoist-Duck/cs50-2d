@@ -1,6 +1,7 @@
 WINDOW_WIDTH = 1280
 WINDOW_HEIGHT = 720
 
+-- TODO: Adjust
 VIRTUAL_WIDTH = 432
 VIRTUAL_HEIGHT = 243
 
@@ -12,9 +13,10 @@ push = require "push"
 Class = require "class"
 
 require "Paddle"
-require "Ball" 
+require "Ball"
 require "Sound"
 require "Debug"
+require "Collections"
 
 function love.load()
     love.window.setTitle("Pong")
@@ -22,7 +24,10 @@ function love.load()
     love.graphics.setDefaultFilter("nearest", "nearest")
 
     -- Adding an epoch-based seed
-    math.randomseed(os.time())
+    math.randomseed(os.time()) -- TODO: Study alternatives
+
+    -- Getting a time reference
+    now = love.timer.getTime()
 
     -- Defining fonts
     smallFont = love.graphics.newFont("font.ttf", 8)
@@ -66,11 +71,20 @@ function love.load()
 
     -- Settings
     showFPS = false
+    winning_score = 5
+
+    player_options = {
+        "Human",
+        "Pong Jr.",
+        "Mr. Pong",
+        "El Pongo!"
+    }
     
-    -- Server
+    -- Initial Server (the one who serves the ball)
     server = math.random(1, 2)
 
-    -- Paddles
+    -- Players' Paddles
+    -- TODO: Refactor to call them players not paddles
     player1 = Paddle(10, 30, 5, 20, "left")
     player2 = Paddle(VIRTUAL_WIDTH - 15, VIRTUAL_HEIGHT - 30, 5, 20, "right")
 
@@ -88,15 +102,19 @@ function love.keypressed(key)
     if key == 'escape' then
         love.event.quit()
     elseif key == 'enter' or key == 'return' then
-        -- TODO: 1 for single player, 2 for dual player
         if gameState == "start" then
             gameState = "serve"
         elseif gameState == "serve" then
             gameState = "play"
-        elseif gameState == "end" then -- TODO: Then start instead, so one can change players/mode
-            gameState = "start"
+        elseif gameState == "end" then
+            -- Reset Scores
+            player1:reset()
+            player2:reset()
 
+            -- Reset Ball Position
             ball:reset()
+
+            gameState = "start"
 
             if winner == 1 then
                 server = 2
@@ -110,8 +128,28 @@ function love.keypressed(key)
         else
             showFPS = true
         end
+    elseif key == 'w' then
+        if gameState == "start" then
+            -- Move up the selection for P1
+            player1.ai = cycle_through(player_options, player1.ai, "backward", "index")
+        end
+    elseif key == 's' then
+        if gameState == "start" then
+            -- Move down the selection for P1
+            player1.ai = cycle_through(player_options, player1.ai, "forward", "index")
+        end
+    elseif key == 'up' then
+        if gameState == "start" then
+            -- Move up the selection for P2
+            player2.ai = cycle_through(player_options, player2.ai, "backward", "index")
+        end
+    elseif key == 'down' then
+        if gameState == "start" then
+            -- Move down the selection for P2
+            player2.ai = cycle_through(player_options, player2.ai, "forward", "index")
+        end
     end
-
+    
     -- TODO: Restart with R (hold or double press? settings!)
     -- TODO: Make starting over a function that is called after win or [R]
 
@@ -122,10 +160,13 @@ function love.keypressed(key)
 end
 
 function love.update(dt)
+    -- Updating my time reference
+    now = love.timer.getTime()
+
     if gameState == "serve" then
         ball:reset()
-        player1:reset()
-        player2:reset()
+        player1:reset(player1.score)
+        player2:reset(player2.score)
 
         if server == 2 then
             ball.dx = -ball.dx -- dx is defined as positive on ball:reset()
@@ -146,43 +187,51 @@ function love.update(dt)
         if ball.x < 0 then
             server = 1
             player2.score = player2.score + 1
-            if player2.score >= 5 then
+            play_sound("plim")
+            if player2.score >= winning_score then
                 winner = 2
                 gameState = "end"
             else
-                play_sound("plim")
                 gameState = "serve"
             end
 
         elseif ball.x > VIRTUAL_WIDTH then
             server = 2
             player1.score = player1.score + 1
-            if player1.score >= 5 then
+            play_sound("plim")
+            if player1.score >= winning_score then
                 winner = 1
                 gameState = "end"
             else
-                play_sound("plim")
                 ball:reset()
                 gameState = "serve"
             end
         end
 
         -- Player 1 controls (w/s)
-        if love.keyboard.isDown('w') then
-            player1.dy = -PADDLE_SPEED
-        elseif love.keyboard.isDown('s') then
-            player1.dy = PADDLE_SPEED
+        if player1.ai == 1 then
+            if love.keyboard.isDown('w') then
+                player1.dy = -PADDLE_SPEED
+            elseif love.keyboard.isDown('s') then
+                player1.dy = PADDLE_SPEED
+            else
+                player1.dy = 0
+            end
         else
-            player1.dy = 0
+            player1:react(ball, PADDLE_SPEED, now)
         end
 
         -- Player 2 controls (up/down)
-        if love.keyboard.isDown('up') then
-            player2.dy = -PADDLE_SPEED
-        elseif love.keyboard.isDown('down') then
-            player2.dy = PADDLE_SPEED
+        if player2.ai == 1 then
+            if love.keyboard.isDown('up') then
+                player2.dy = -PADDLE_SPEED
+            elseif love.keyboard.isDown('down') then
+                player2.dy = PADDLE_SPEED
+            else
+                player2.dy = 0
+            end
         else
-            player2.dy = 0
+            player2:react(ball, PADDLE_SPEED, now)
         end
 
         ball:update(dt)
@@ -193,10 +242,27 @@ function love.update(dt)
 end
 
 function love.draw()
+    -- TODO: Add a profile pic, just some pixel art to differentiate the player and the different AIs, colour swap in case it's the same AI for when it's CPU vs CPU
     push.start()
 
     -- Set a colour to every pixel
     love.graphics.clear(40/255, 45/255, 52/255, 1)
+
+    love.graphics.setFont(smallFont)
+    love.graphics.printf(
+        player_options[player1.ai],
+        -160,
+        10,
+        VIRTUAL_WIDTH,
+        "center"
+    )
+    love.graphics.printf(
+        player_options[player2.ai],
+        160,
+        10,
+        VIRTUAL_WIDTH,
+        "center"
+    )
 
     if gameState == "start" then
         love.graphics.setFont(smallFont)
@@ -214,6 +280,7 @@ function love.draw()
             VIRTUAL_WIDTH,
             "center"
         )
+
     elseif gameState == "serve" then
         love.graphics.setFont(smallFont)
         love.graphics.printf(

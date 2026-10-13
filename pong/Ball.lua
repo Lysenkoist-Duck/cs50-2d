@@ -4,6 +4,7 @@ require "Collections"
 Ball = Class{} -- Class({}) in reality
 
 function Ball:init()
+    -- TODO: Allow for the ball to expand/shrink and teleport (with a delay so players can react)
     self.initial_spd = 100
 
     self:reset()

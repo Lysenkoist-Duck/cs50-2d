@@ -5,7 +5,7 @@ VIRTUAL_WIDTH = 456
 VIRTUAL_HEIGHT = 240
 
 -- How many pixels the paddles move per second
-PADDLE_SPEED = 150 -- TODO: Acceleration, start at ~100 and accelerate up to ~300
+PADDLE_SPEED = 150 -- TODO: Acceleration, start at ~100 and accelerate up to ~300 after half a second
 
 push = require "push"
 
@@ -23,7 +23,7 @@ function love.load()
     love.graphics.setDefaultFilter("nearest", "nearest")
 
     -- Adding an epoch-based seed
-    math.randomseed(os.time()) -- TODO: Study alternatives
+    math.randomseed(os.time())
 
     -- Getting a time reference
     now = love.timer.getTime()

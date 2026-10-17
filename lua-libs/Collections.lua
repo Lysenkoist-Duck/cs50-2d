@@ -1,4 +1,6 @@
-function Set(list)
+local Collections = {}
+
+function Collections.Set(list)
     local set = {}
     for _, value in ipairs(list) do
         set[value] = true
@@ -6,8 +8,8 @@ function Set(list)
     return set
 end
 
--- TODO: Optmize
-function cycle_through(list, index, direction, return_type)
+-- TODO: Optimize
+function Collections.cycle_through(list, index, direction, return_type)
     list_len = table.getn(list)
 
     if direction == "forward" then
@@ -32,3 +34,5 @@ function cycle_through(list, index, direction, return_type)
         end
     end
 end
+
+return Collections

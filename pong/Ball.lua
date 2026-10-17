@@ -1,5 +1,4 @@
-require "Sound"
-require "Collections"
+Collections = require "Collections"
 
 Ball = Class{} -- Class({}) in reality
 
@@ -29,12 +28,12 @@ function Ball:collides(paddles)
 end
 
 function Ball:bounce(side)
-    local vertical = Set{"up", "down"}
-    local horizontal = Set{"left", "right"}
+    local vertical = Collections.Set{"up", "down"}
+    local horizontal = Collections.Set{"left", "right"}
 
     if vertical[side] then
         -- Bounce off top & bottom walls
-        play_sound("tum")
+        audios["tum"]()
 
         if side == "up" then
             self.y = 0
@@ -45,7 +44,7 @@ function Ball:bounce(side)
         end
     elseif horizontal[side] then
         -- Bounce off left & right paddles
-        play_sound("pum")
+        audios["pum"]()
 
         -- Reverts the speed of the ball and increases it by 5%
         self.dx = -self.dx * 1.05
@@ -74,7 +73,7 @@ function Ball:reset()
     self.height = 4
 
     -- Ball's Speed
-    -- TODO: Make a single spd stat to control both dx & dy
+    -- TODO: Make a single spd stat & a direction/orientation to replace dx & dy
     self.dx = self.initial_spd -- Inverted in main.love.update when needed
     self.dy = math.random(-50, 50) * 1.5
 

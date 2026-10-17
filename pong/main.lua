@@ -4,18 +4,17 @@ WINDOW_HEIGHT = 1080
 VIRTUAL_WIDTH = 456
 VIRTUAL_HEIGHT = 240
 
--- How many pixels the paddles move per second
-PADDLE_SPEED = 150 -- TODO: Acceleration, start at ~100 and accelerate up to ~300 after half a second
+package.path = package.path .. ";" .. os.getenv("HOME") .. "/Projects/cs50 2d/lua-libs/?.lua"
 
 push = require "push"
-
 Class = require "class"
+
+Collections = require "Collections"
+Audio = require "Audio"
+Debug = require "Debug"
 
 require "Paddle"
 require "Ball"
-require "Sound"
-require "Debug"
-require "Collections"
 
 function love.load()
     love.window.setTitle("Pong")
@@ -28,31 +27,16 @@ function love.load()
     -- Getting a time reference
     now = love.timer.getTime()
 
-    -- Defining fonts
+    -- Loading Fonts
     small_font = love.graphics.newFont("font.ttf", 8)
     large_font = love.graphics.newFont("font.ttf", 16)
     score_font = love.graphics.newFont("font.ttf", 32)
 
-    -- Defining Sounds
-    sounds = {
-        ["pum"] = {
-            love.audio.newSource("sounds/pum1.wav", "static"),
-            love.audio.newSource("sounds/pum2.wav", "static"),
-            love.audio.newSource("sounds/pum3.wav", "static"),
-            love.audio.newSource("sounds/pum4.wav", "static")
-        },
-        ["tum"] = {
-            love.audio.newSource("sounds/tum1.wav", "static"),
-            love.audio.newSource("sounds/tum2.wav", "static"),
-            love.audio.newSource("sounds/tum3.wav", "static"),
-            love.audio.newSource("sounds/tum4.wav", "static")
-        },
-        ["plim"] = {
-            love.audio.newSource("sounds/plim1.wav", "static"),
-            love.audio.newSource("sounds/plim2.wav", "static"),
-            love.audio.newSource("sounds/plim3.wav", "static"),
-            love.audio.newSource("sounds/plim4.wav", "static")
-        }
+    -- Loading Sounds
+    audios = {
+        ["tum"] = Audio.newPitchableSound("tum.wav", 5),
+        ["pum"] = Audio.newPitchableSound("pum.wav", 5),
+        ["plim"] = Audio.newPitchableSound("plim.wav")
     }
 
     love.window.setMode(WINDOW_WIDTH, WINDOW_HEIGHT, {
@@ -130,23 +114,29 @@ function love.keypressed(key)
     elseif key == 'w' then
         if game_state == "start" then
             -- Move up the selection for P1
-            player1.ai = cycle_through(player_options, player1.ai, "backward", "index")
+            player1.ai = Collections.cycle_through(player_options, player1.ai, "backward", "index")
         end
     elseif key == 's' then
         if game_state == "start" then
             -- Move down the selection for P1
-            player1.ai = cycle_through(player_options, player1.ai, "forward", "index")
+            player1.ai = Collections.cycle_through(player_options, player1.ai, "forward", "index")
         end
     elseif key == 'up' then
         if game_state == "start" then
             -- Move up the selection for P2
-            player2.ai = cycle_through(player_options, player2.ai, "backward", "index")
+            player2.ai = Collections.cycle_through(player_options, player2.ai, "backward", "index")
         end
     elseif key == 'down' then
         if game_state == "start" then
             -- Move down the selection for P2
-            player2.ai = cycle_through(player_options, player2.ai, "forward", "index")
+            player2.ai = Collections.cycle_through(player_options, player2.ai, "forward", "index")
         end
+    elseif key == 'n' then
+        audios["tum"]()
+    elseif key == 'b' then
+        audios["pum"]()
+    elseif key == 'm' then
+        audios["plim"]()
     end
     
     -- TODO: Restart with R (hold or double press? settings!)
@@ -183,10 +173,16 @@ function love.update(dt)
 
         -- Scoring
         -- TODO: Play party/victory song when someone wins
-        if ball.x < 0 then
+        p2_scored = ball.x < 0
+        p1_scored = ball.x > VIRTUAL_WIDTH
+
+        if p2_scored or p1_scored then
+            audios["plim"]()
+        end
+
+        if p2_scored then
             server = 1
             player2.score = player2.score + 1
-            play_sound("plim")
             if player2.score >= winning_score then
                 winner = 2
                 game_state = "end"
@@ -194,47 +190,47 @@ function love.update(dt)
                 game_state = "serve"
             end
 
-        elseif ball.x > VIRTUAL_WIDTH then
+        elseif p1_scored then
             server = 2
             player1.score = player1.score + 1
-            play_sound("plim")
             if player1.score >= winning_score then
                 winner = 1
                 game_state = "end"
             else
-                ball:reset()
                 game_state = "serve"
             end
         end
 
-        -- Player 1 controls (w/s)
+        -- Player 1 Movement
+        local dir = 0
         if player1.ai == 1 then
             if love.keyboard.isDown('w') then
-                player1.dy = -PADDLE_SPEED
-            elseif love.keyboard.isDown('s') then
-                player1.dy = PADDLE_SPEED
-            else
-                player1.dy = 0
+                dir = -1
             end
+            if love.keyboard.isDown('s') then
+                dir = 1
+            end
+            player1:move(dir, dt)
         else
-            player1:react(ball, PADDLE_SPEED, now)
+            player1:react(ball, dt)
         end
 
-        -- Player 2 controls (up/down)
+        -- Player 2 Movement
+        local dir = 0
         if player2.ai == 1 then
             if love.keyboard.isDown('up') then
-                player2.dy = -PADDLE_SPEED
-            elseif love.keyboard.isDown('down') then
-                player2.dy = PADDLE_SPEED
-            else
-                player2.dy = 0
+                dir = -1
             end
+            if love.keyboard.isDown('down') then
+                dir = 1
+            end
+            player2:move(dir, dt)
         else
-            player2:react(ball, PADDLE_SPEED, now)
+            player2:react(ball, dt)
         end
 
+        -- Update game elements
         ball:update(dt)
-
         player1:update(dt)
         player2:update(dt)
     end
@@ -331,13 +327,14 @@ function love.draw()
         VIRTUAL_HEIGHT / 2 - 120
     )
 
+    -- Render game elements
     player1:render()
     player2:render()
 
     ball:render()
 
     if show_fps then
-        display_fps()
+        Debug.display_fps()
     end
 
     push.finish()

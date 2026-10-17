@@ -34,8 +34,8 @@ function love.load()
 
     -- Loading Sounds
     audios = {
-        ["tum"] = Audio.newPitchableSound("tum.wav", 5),
-        ["pum"] = Audio.newPitchableSound("pum.wav", 5),
+        ["tum"] = Audio.newPitchableSound("tum.wav"),
+        ["pum"] = Audio.newPitchableSound("pum.wav"),
         ["plim"] = Audio.newPitchableSound("plim.wav")
     }
 
